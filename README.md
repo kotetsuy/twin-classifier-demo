@@ -93,7 +93,7 @@ python src/realtime.py --region 0,0,1280,720
 
 - [x] M1: スキャフォールド / ROCm 疎通確認
 - [x] M2: 顔アライメント (`face_align.py`) — mediapipe FaceLandmarker + 相似変換（鏡像なし）
-- [ ] M3: Nemotron VLM 判定 (`nemotron_client.py` / llama-server)
+- [x] M3: Nemotron VLM 判定 (`nemotron_client.py` / llama-server) — `judge` 高速判定 + `explain` 解説（既定 thinking OFF）
 - [ ] M4: 高速 CNN 学習 (`train_cnn.py`・任意)
 - [ ] M5: 統一インターフェース・評価 (`classify.py` / `evaluate.py`)
 - [ ] M6: リアルタイム化 (`realtime.py`)
