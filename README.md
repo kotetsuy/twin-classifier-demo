@@ -32,16 +32,25 @@
 
 ### セットアップ
 
-```bash
-# 1. PyTorch は ROCm ホイールを使う（PyPI の既定ビルドは iGPU を認識しない）
-#    本マシンには ROCm ビルドが導入済み (torch 2.9.x+rocm7.2.1)。
+本マシンでは ROCm 版 PyTorch (torch 2.9.x+rocm7.2.1) が **Python 3.12 のユーザーサイト
+(`~/.local`)** に導入済み。これをそのまま使うため、3.12 の `venv` を
+`--system-site-packages` 付きで作るとシステム/ユーザーサイトの torch を継承できる
+（`ENABLE_USER_SITE` が有効なので `~/.local` の torch も見える）。
 
-# 2. アプリ依存をインストール
-pip install -r requirements.txt
+```bash
+# 1. torch(ROCm) を継承する venv を作成（PyPI の既定ビルドは iGPU を認識しないので入れ直さない）
+python3 -m venv --system-site-packages .venv
+
+# 2. プロジェクト依存だけ venv 内に追加
+.venv/bin/pip install -r requirements.txt
 
 # 3. ROCm 疎通確認（gfx1151 が見えること）
+.venv/bin/python -c "import torch; print(torch.cuda.is_available(), torch.cuda.get_device_name(0))"
 bash scripts/verify_rocm.sh
 ```
+
+`face_align.py` は初回実行時に mediapipe FaceLandmarker モデルを `.models/` に
+ダウンロードする（リポジトリには含めない / gitignore 対象）。
 
 PyTorch では ROCm でも device 名に `"cuda"` を使う（`torch.cuda.is_available()` が True）。
 
@@ -50,6 +59,10 @@ PyTorch では ROCm でも device 名に `"cuda"` を使う（`torch.cuda.is_ava
 > M2 以降の実装に合わせて追記予定。
 
 ```bash
+# 顔アライメント（実装済み）: 両目基準で 224x224 に正規化
+python src/face_align.py --selftest                       # 幾何・疎通の自己テスト
+python src/face_align.py --input data/train --output data/train_aligned
+
 # ゼロショット VLM 判定（予定）
 python src/classify.py --image path/to/face.png --backend vlm
 
@@ -66,7 +79,7 @@ python src/realtime.py --region 0,0,1280,720
 ## ステータス
 
 - [x] M1: スキャフォールド / ROCm 疎通確認
-- [ ] M2: 顔アライメント (`face_align.py`)
+- [x] M2: 顔アライメント (`face_align.py`) — mediapipe FaceLandmarker + 相似変換（鏡像なし）
 - [ ] M3: ゼロショット VLM (`zeroshot_vlm.py`)
 - [ ] M4: CNN 学習 (`train_cnn.py`)
 - [ ] M5: 統一インターフェース・評価 (`classify.py` / `evaluate.py`)
