@@ -13,10 +13,11 @@
 # torch          # installed via ROCm wheel (see above)
 # torchvision    # installed via ROCm wheel (see above)
 
-transformers>=4.44      # moondream2 / Qwen-VL zero-shot backends
-pillow>=10.0            # image IO
+# The VLM (Nemotron 3 Nano Omni) runs in llama-server out of process, so no
+# Python VLM stack is needed here -- we only need an HTTP client.
+requests>=2.31         # talk to llama-server OpenAI-compatible API
+pillow>=10.0           # image IO
 numpy>=1.26
-mss>=9.0                # screen capture for realtime.py
-mediapipe>=0.10         # face landmarks for face_align.py
-matplotlib>=3.8         # evaluation charts / confusion matrix
-einops>=0.7             # required by some VLM model code (e.g. moondream)
+mss>=9.0               # screen capture for realtime.py
+mediapipe>=0.10        # face landmarks for face_align.py
+matplotlib>=3.8        # evaluation charts / confusion matrix

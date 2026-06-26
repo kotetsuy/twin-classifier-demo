@@ -15,14 +15,24 @@
 | ファイル | 役割 |
 |---|---|
 | `src/face_align.py` | ランドマーク基準で顔をクロップ・224x224 正規化 |
-| `src/zeroshot_vlm.py` | moondream2 等の VLM でゼロショット判定 |
-| `src/train_cnn.py` | MobileNetV3-small を 2 クラスに付け替えて学習 |
+| `src/nemotron_client.py` | llama-server(OpenAI互換) 経由で Nemotron VLM を叩く判定/解説クライアント |
+| `src/train_cnn.py` | MobileNetV3-small を 2 クラスに付け替えて学習（高速クリッカー用・任意） |
 | `src/classify.py` | 統一インターフェース `classify(image, backend) -> "A"\|"B"` |
-| `src/evaluate.py` | accuracy / 混同行列 / 手法比較表 |
+| `src/evaluate.py` | accuracy / 混同行列 / 手法比較表（レイテンシ込み） |
 | `src/realtime.py` | `mss` で画面キャプチャ → `classify` → 左右クリック |
+| `grammars/ab.gbnf` | 出力を `A\|B` に強制する GBNF（高速判定パス用） |
 | `scripts/verify_rocm.sh` | torch + ROCm 疎通チェック |
+| `scripts/serve_nemotron.sh` | Nemotron VLM を llama-server で常駐起動 |
 
 データセットは `data/train/{A,B}` および `data/val/{A,B}`（ImageFolder 形式、gitignore 対象）。
+
+### 判定バックエンド（二段構え）
+
+- **賢い解説系（本命）**: NVIDIA Nemotron 3 Nano Omni 30B-A3B を ROCm llama.cpp の
+  `llama-server`（OpenAI 互換 API, :8080）で常駐させ、HTTP で叩く。約 2 秒/回。
+  判定＋見分けの根拠＋思考トレースを語らせてデモ表示する。
+- **速い実行系（任意）**: MobileNetV3-small の軽量 CNN をサブミリ秒で回す速度勝負用。
+  これを使う場合 Nemotron は事後の解説役に回す。
 
 ## 環境
 
@@ -63,10 +73,13 @@ PyTorch では ROCm でも device 名に `"cuda"` を使う（`torch.cuda.is_ava
 python src/face_align.py --selftest                       # 幾何・疎通の自己テスト
 python src/face_align.py --input data/train --output data/train_aligned
 
-# ゼロショット VLM 判定（予定）
-python src/classify.py --image path/to/face.png --backend vlm
+# Nemotron VLM を常駐起動（別ターミナル / 予定）
+bash scripts/serve_nemotron.sh
 
-# CNN 学習（予定）
+# VLM 判定（予定）: 上の llama-server :8080 を叩く
+python src/classify.py --image path/to/face.png --backend nemotron
+
+# 高速 CNN 学習（任意・予定）
 python src/train_cnn.py --data data --epochs 20
 
 # 手法比較・評価（予定）
@@ -80,8 +93,8 @@ python src/realtime.py --region 0,0,1280,720
 
 - [x] M1: スキャフォールド / ROCm 疎通確認
 - [x] M2: 顔アライメント (`face_align.py`) — mediapipe FaceLandmarker + 相似変換（鏡像なし）
-- [ ] M3: ゼロショット VLM (`zeroshot_vlm.py`)
-- [ ] M4: CNN 学習 (`train_cnn.py`)
+- [ ] M3: Nemotron VLM 判定 (`nemotron_client.py` / llama-server)
+- [ ] M4: 高速 CNN 学習 (`train_cnn.py`・任意)
 - [ ] M5: 統一インターフェース・評価 (`classify.py` / `evaluate.py`)
 - [ ] M6: リアルタイム化 (`realtime.py`)
 - [ ] M7: 記事 (`the-touch-classifier.md`) への結果反映
