@@ -236,3 +236,13 @@ results/*.jpg
 .models/
 *.task
 
+# Private notes / data ledgers in markdown, and local scratch (see DATA_PRIVATEJ.md)
+private/
+*.private.md
+PROGRESS.md
+results/eval.json
+results/eval.csv
+# 実写データセット由来の評価生成物（集計値も手元限定にする）
+results/the_touch/
+results/thetouch/
+
