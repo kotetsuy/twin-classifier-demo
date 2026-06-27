@@ -96,5 +96,5 @@ python src/realtime.py --region 0,0,1280,720
 - [x] M3: Nemotron VLM 判定 (`nemotron_client.py` / llama-server) — `judge` 高速判定 + `explain` 解説（既定 thinking OFF）
 - [x] M4: 高速 CNN 学習 (`train_cnn.py`) — MobileNetV3-small、~4ms/回・合成 val 100%
 - [x] M5: 統一インターフェース・評価 (`classify.py` / `evaluate.py`) — few-shot vs zero-shot の精度・混同行列・レイテンシ比較
-- [ ] M6: リアルタイム化 (`realtime.py`)
+- [x] M6: リアルタイム化 (`realtime.py`) — mss キャプチャ→classify→クリック。explain(few-shot VLM)/speed(CNN) の2モード、既定 dry-run
 - [ ] M7: 記事 (`the-touch-classifier.md`) への結果反映

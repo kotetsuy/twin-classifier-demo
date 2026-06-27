@@ -19,5 +19,6 @@ requests>=2.31         # talk to llama-server OpenAI-compatible API
 pillow>=10.0           # image IO
 numpy>=1.26
 mss>=9.0               # screen capture for realtime.py
+pynput>=1.7            # mouse control for realtime.py (X11)
 mediapipe>=0.10        # face landmarks for face_align.py
 matplotlib>=3.8        # evaluation charts / confusion matrix
