@@ -1,0 +1,24 @@
+# twin-classifier-demo dependencies
+#
+# NOTE on PyTorch / torchvision:
+#   This project runs on AMD ROCm (gfx1151). Do NOT `pip install torch` from
+#   the default PyPI index — that pulls the CUDA/CPU build and will not see the
+#   iGPU. Install the ROCm wheels matching the local ROCm (7.2.x), e.g.:
+#
+#     pip install --index-url https://download.pytorch.org/whl/rocm6.2 torch torchvision
+#
+#   On this machine a ROCm build is already present system-wide
+#   (torch 2.9.x+rocm7.2.1). Verify with scripts/verify_rocm.sh before running.
+#
+# torch          # installed via ROCm wheel (see above)
+# torchvision    # installed via ROCm wheel (see above)
+
+# The VLM (Nemotron 3 Nano Omni) runs in llama-server out of process, so no
+# Python VLM stack is needed here -- we only need an HTTP client.
+requests>=2.31         # talk to llama-server OpenAI-compatible API
+pillow>=10.0           # image IO
+numpy>=1.26
+mss>=9.0               # screen capture for realtime.py
+pynput>=1.7            # mouse control for realtime.py (X11)
+mediapipe>=0.10        # face landmarks for face_align.py
+matplotlib>=3.8        # evaluation charts / confusion matrix

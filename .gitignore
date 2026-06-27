@@ -216,3 +216,23 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Claude
+.claude/
+the-touch-classifier.md
+HANDOFF.md
+
+# Project: datasets and trained weights must never be committed (rights/privacy)
+data/
+*.pt
+*.pth
+*.onnx
+*.safetensors
+results/*.png
+results/*.jpg
+!results/.gitkeep
+
+# Downloaded model bundles (fetched on first use, not committed)
+.models/
+*.task
+
