@@ -20,6 +20,7 @@ WM のウィンドウ配置に依存しないよう、クリック先（A=青/B=
 from __future__ import annotations
 
 import argparse
+import os
 import sys
 import time
 from pathlib import Path
@@ -28,6 +29,9 @@ import numpy as np
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / "src"))
+
+# GUI(twin_stream) にどの判定系かを伝える状態ファイル（既定パスは両者で一致）。
+DEFAULT_MODE_FILE = os.environ.get("TWIN_DEMO_MODE_FILE", "/tmp/twin_demo_mode")
 
 # Tk の塗り色（BGR）。A=#4682e6, B=#46c878, 顔枠=#ff00ff
 BLUE = np.array([230, 130, 70])
@@ -81,7 +85,16 @@ def main() -> None:
     ap.add_argument("--interval", type=float, default=0.8, help="クリック後・次グラブまでの待ち")
     ap.add_argument("--refs-dir", default="data/synthetic/train")
     ap.add_argument("--refs-per-class", type=int, default=2)
+    ap.add_argument("--mode-file", default=DEFAULT_MODE_FILE,
+                    help="GUI に現在モード(CNN/VLM)を知らせる状態ファイル")
     args = ap.parse_args()
+
+    # GUI のカウンタ振り分け用に現在モードを通知（cnn=CNN / nemotron=VLM）
+    tag = "VLM" if args.backend == "nemotron" else "CNN"
+    try:
+        Path(args.mode_file).write_text(tag)
+    except OSError as e:  # noqa: BLE001
+        print(f"[warn] mode-file 書込失敗（{e}）", file=sys.stderr)
 
     from screen_capture import PortalCapture
 
