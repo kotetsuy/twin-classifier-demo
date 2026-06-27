@@ -31,6 +31,7 @@ ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / "src"))
 
 import nemotron_client as nc  # noqa: E402
+import data_config as _dc  # noqa: E402
 
 LABELS = ("A", "B")
 IMAGE_EXTS = {".png", ".jpg", ".jpeg", ".bmp", ".webp"}
@@ -221,12 +222,13 @@ def build_predictors(methods: list[str], data: Path, refs_per_class: int,
 
 def main() -> None:
     ap = argparse.ArgumentParser(description="Evaluate twin classifiers (M5)")
-    ap.add_argument("--data", type=Path, default=ROOT / "data" / "synthetic")
+    ap.add_argument("--data", type=Path, default=_dc.data_dir(),
+                    help="val/train の親（既定は TWIN_DATASET スイッチ）")
     ap.add_argument("--methods", default="fewshot,zeroshot",
                     help="カンマ区切り: fewshot,zeroshot,cnn")
     ap.add_argument("--with-cnn", action="store_true", help="cnn を手法に追加")
-    ap.add_argument("--weights", type=Path, default=None,
-                    help="cnn の重みパス（既定 results/cnn.pt を上書きせず別重みで評価）")
+    ap.add_argument("--weights", type=Path, default=_dc.weights(),
+                    help="cnn の重みパス（既定は TWIN_DATASET スイッチに対応する重み）")
     ap.add_argument("--refs-per-class", type=int, default=2, help="few-shot 見本枚数/クラス")
     ap.add_argument("--limit", type=int, default=None, help="val のクラス毎上限（高速確認用）")
     ap.add_argument("--out", type=Path, default=ROOT / "results")

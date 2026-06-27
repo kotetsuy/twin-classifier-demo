@@ -28,9 +28,15 @@ import torch.nn as nn
 from torch.utils.data import DataLoader
 from torchvision import datasets, models, transforms
 
+try:
+    import data_config as _dc
+except ImportError:  # パッケージ(src.train_cnn)として import された場合
+    from . import data_config as _dc
+
 ROOT = Path(__file__).resolve().parent.parent
-DEFAULT_DATA = ROOT / "data" / "synthetic"
-DEFAULT_WEIGHTS = ROOT / "results" / "cnn.pt"
+# 既定データ/重みは TWIN_DATASET スイッチに従う（src/data_config.py）。
+DEFAULT_DATA = _dc.data_dir()
+DEFAULT_WEIGHTS = _dc.weights()
 CLASSES = ("A", "B")  # ImageFolder はアルファベット順 → A=0, B=1
 IMAGENET_MEAN = [0.485, 0.456, 0.406]
 IMAGENET_STD = [0.229, 0.224, 0.225]
