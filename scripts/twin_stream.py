@@ -18,6 +18,7 @@ q または Esc で終了。--auto-advance 秒 でクリックなしでも自動
 from __future__ import annotations
 
 import argparse
+import os
 import random
 import re
 import sys
@@ -27,6 +28,10 @@ from pathlib import Path
 from PIL import Image, ImageTk
 
 IMAGE_EXTS = {".png", ".jpg", ".jpeg", ".bmp", ".webp"}
+# play_twins が「今どの判定系か（CNN/VLM）」を書く状態ファイル。GUI はこれを読んで
+# クリックを CNN 用 / VLM 用カウンタに振り分ける。両者で既定パスを合わせる。
+DEFAULT_MODE_FILE = os.environ.get("TWIN_DEMO_MODE_FILE", "/tmp/twin_demo_mode")
+MODES = (("CNN", "#4ec3ff"), ("VLM", "#ffb04e"))  # (ラベル, 色)
 
 
 def list_images(d: Path) -> list[Path]:
@@ -65,6 +70,8 @@ class Stream:
         random.seed(args.seed)
         random.shuffle(self.pool)
         self.auto = args.auto_advance
+        self.loop = args.loop
+        self.mode_file = Path(args.mode_file)
 
         self.root = tk.Tk()
         self.root.title("twin_stream")
@@ -87,13 +94,44 @@ class Stream:
         self.root.bind("q", lambda e: self.quit())
 
         self.idx = 0
-        self.score = 0
-        self.total = 0
+        # CNN 用 / VLM 用にスコアを分離
+        self.stats = {m: {"ok": 0, "n": 0} for m, _ in MODES}
         self.last = "-"
         self._imgref = None
 
     def cur(self):
         return self.pool[self.idx % len(self.pool)]
+
+    def active_mode(self) -> str | None:
+        """play_twins が書いた現在モード（'CNN'/'VLM'）。無ければ None。"""
+        try:
+            v = self.mode_file.read_text().strip().upper()
+        except OSError:
+            return None
+        return v if v in self.stats else None
+
+    @staticmethod
+    def _acc(s) -> str:
+        return f"{100 * s['ok'] / s['n']:.0f}%" if s["n"] else "-"
+
+    def _draw_scoreboard(self, c, active):
+        """CNN/VLM の分離スコアと、現在判定中モードのバナーを描く。"""
+        banner = f"▶ 判定中: {active}" if active else "▶ 待機中"
+        bcol = dict(MODES).get(active, "#888888")
+        c.create_text(self.sw // 2, 22, text=banner, fill=bcol,
+                      font=("TkDefaultFont", 22, "bold"))
+        for i, (m, col) in enumerate(MODES):
+            s = self.stats[m]
+            yy = 48 + i * 38
+            on = (m == active)
+            if on:
+                c.create_rectangle(12, yy - 4, 330, yy + 30, outline=col, width=2)
+            c.create_text(20, yy, anchor="nw",
+                          text=f"{m}   {s['ok']}/{s['n']}  ({self._acc(s)})",
+                          fill=col if on else "#8c8c8c",
+                          font=("TkDefaultFont", 18, "bold" if on else "normal"))
+        c.create_text(20, 48 + len(MODES) * 38, anchor="nw", text=f"last: {self.last}",
+                      fill="#c8c8c8", font=("TkDefaultFont", 13))
 
     def report(self):
         """マップ後の実測絶対座標を出す（realtime / mouse_test 用）。"""
@@ -135,14 +173,15 @@ class Stream:
             c.create_rectangle(x, y, x + w, y + h, fill=col, outline="")
             c.create_text(x + w // 2, y + h // 2, text=label, fill="white",
                           font=("TkDefaultFont", 40, "bold"))
-        acc = f"{100*self.score/self.total:.0f}%" if self.total else "-"
-        c.create_text(20, 28, anchor="nw",
-                      text=f"score {self.score}/{self.total} ({acc})  last: {self.last}",
-                      fill="#e6e6e6", font=("TkDefaultFont", 18))
+        self._draw_scoreboard(c, self.active_mode())
 
     def advance(self):
         self.idx += 1
         if self.idx >= len(self.pool):
+            if self.loop:  # 送り切ったら先頭に戻る（連続デモ用）
+                self.idx = 0
+                self.render()
+                return
             self.idx = len(self.pool)
             print(f"[stim] 全 {len(self.pool)} 枚を出し切りました。", flush=True)
             self.render_end()
@@ -152,9 +191,13 @@ class Stream:
     def render_end(self):
         c = self.canvas
         c.delete("all")
-        acc = f"{100*self.score/self.total:.0f}%" if self.total else "-"
-        c.create_text(self.sw // 2, self.sh // 2, text=f"DONE  {self.score}/{self.total} ({acc})",
+        c.create_text(self.sw // 2, self.sh // 2 - 60, text="DONE",
                       fill="#e6e6e6", font=("TkDefaultFont", 36, "bold"))
+        for i, (m, col) in enumerate(MODES):
+            s = self.stats[m]
+            c.create_text(self.sw // 2, self.sh // 2 + i * 40,
+                          text=f"{m}  {s['ok']}/{s['n']} ({self._acc(s)})",
+                          fill=col, font=("TkDefaultFont", 26, "bold"))
 
     def on_click(self, ev):
         x, y = ev.x, ev.y
@@ -168,10 +211,12 @@ class Stream:
             return
         truth = self.cur()[1]
         ok = hit == truth
-        self.score += int(ok)
-        self.total += 1
-        self.last = f"click {hit} vs truth {truth} -> {'OK' if ok else 'NG'}"
-        print(f"[stim] {self.total:>3}  {self.last}  running {self.score}/{self.total}",
+        mode = self.active_mode() or "CNN"  # 状態ファイル未設定時は CNN 扱い
+        s = self.stats[mode]
+        s["ok"] += int(ok)
+        s["n"] += 1
+        self.last = f"[{mode}] {hit} vs truth {truth} -> {'OK' if ok else 'NG'}"
+        print(f"[stim] {mode} {s['n']:>3}  {self.last}  running {s['ok']}/{s['n']}",
               flush=True)
         self.advance()
 
@@ -181,7 +226,8 @@ class Stream:
             self.root.after(int(self.auto * 1000), self._auto_tick)
 
     def quit(self):
-        print(f"[stim] 終了 score {self.score}/{self.total}", flush=True)
+        summary = "  ".join(f"{m} {self.stats[m]['ok']}/{self.stats[m]['n']}" for m, _ in MODES)
+        print(f"[stim] 終了  {summary}", flush=True)
         self.root.destroy()
 
     def run(self):
@@ -200,6 +246,10 @@ def main() -> None:
     ap.add_argument("--fullscreen", action="store_true", help="フルスクリーン（入力を奪うので非推奨）")
     ap.add_argument("--auto-advance", type=float, default=0.0,
                     help="秒。>0 ならクリックが無くても自動で次へ")
+    ap.add_argument("--loop", action="store_true",
+                    help="送り切ったら先頭に戻る（CNN→VLM の連続デモ用）")
+    ap.add_argument("--mode-file", default=DEFAULT_MODE_FILE,
+                    help="play_twins が現在モード(CNN/VLM)を書く状態ファイル")
     ap.add_argument("--seed", type=int, default=0)
     args = ap.parse_args()
     Stream(args).run()
