@@ -188,8 +188,13 @@ def _save_confusion_png(all_metrics: list[dict], out: Path) -> None:
     plt.close(fig)
 
 
-def build_predictors(methods: list[str], data: Path, refs_per_class: int):
-    """method 名 -> predict(path)->'A'|'B' の辞書を作る。"""
+def build_predictors(methods: list[str], data: Path, refs_per_class: int,
+                     weights: Path | None = None):
+    """method 名 -> predict(path)->'A'|'B' の辞書を作る。
+
+    weights を指定すると cnn はその重みを使う（既定の results/cnn.pt を上書きせず
+    別データ学習の重みを評価できる）。None なら classify 既定（results/cnn.pt）。
+    """
     predictors = {}
     if "fewshot" in methods or "zeroshot" in methods:
         if not nc.ping():
@@ -202,9 +207,15 @@ def build_predictors(methods: list[str], data: Path, refs_per_class: int):
     if "zeroshot" in methods:
         predictors["zeroshot"] = lambda p: nc.judge(str(p))
     if "cnn" in methods:
-        from classify import classify
+        if weights is not None:
+            from train_cnn import load_classifier, predict_label
 
-        predictors["cnn"] = lambda p: classify(str(p), backend="cnn")
+            m, classes, tf, dev = load_classifier(weights)
+            predictors["cnn"] = lambda p: predict_label(m, classes, tf, dev, str(p))
+        else:
+            from classify import classify
+
+            predictors["cnn"] = lambda p: classify(str(p), backend="cnn")
     return predictors
 
 
@@ -214,6 +225,8 @@ def main() -> None:
     ap.add_argument("--methods", default="fewshot,zeroshot",
                     help="カンマ区切り: fewshot,zeroshot,cnn")
     ap.add_argument("--with-cnn", action="store_true", help="cnn を手法に追加")
+    ap.add_argument("--weights", type=Path, default=None,
+                    help="cnn の重みパス（既定 results/cnn.pt を上書きせず別重みで評価）")
     ap.add_argument("--refs-per-class", type=int, default=2, help="few-shot 見本枚数/クラス")
     ap.add_argument("--limit", type=int, default=None, help="val のクラス毎上限（高速確認用）")
     ap.add_argument("--out", type=Path, default=ROOT / "results")
@@ -224,7 +237,7 @@ def main() -> None:
         methods.append("cnn")
 
     samples = load_val(args.data, args.limit)
-    predictors = build_predictors(methods, args.data, args.refs_per_class)
+    predictors = build_predictors(methods, args.data, args.refs_per_class, args.weights)
 
     all_metrics = []
     for method in methods:
