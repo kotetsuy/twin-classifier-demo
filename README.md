@@ -5,6 +5,10 @@
 
 最終的に「画面キャプチャ → 判定 → 左右クリック」までリアルタイム自動化することを目標とする。
 
+> **ドキュメント**: インストール&実行手順は [`READMEJ.md`](./READMEJ.md)、技術解説は
+> [`TECHNICALJ.md`](./TECHNICALJ.md)、読み物（Qiita記事）は
+> [`the-touch-classifier.md`](./the-touch-classifier.md)。
+
 > **権利・プライバシーへの配慮**
 > 本リポジトリには実在人物の画像・テレビキャプチャ・宣材、およびそれらから学習した重みを **一切同梱しない**。
 > 検証は権利処理済みの素材（自前撮影 / 公開データセット / 生成画像）のみで行う。
@@ -97,4 +101,4 @@ python src/realtime.py --region 0,0,1280,720
 - [x] M4: 高速 CNN 学習 (`train_cnn.py`) — MobileNetV3-small、~4ms/回・合成 val 100%
 - [x] M5: 統一インターフェース・評価 (`classify.py` / `evaluate.py`) — few-shot vs zero-shot の精度・混同行列・レイテンシ比較
 - [x] M6: リアルタイム化 (`realtime.py`) — mss キャプチャ→classify→クリック。explain(few-shot VLM)/speed(CNN) の2モード、既定 dry-run
-- [ ] M7: 記事 (`the-touch-classifier.md`) への結果反映
+- [x] M7: ドキュメント整備 — `READMEJ.md`（手順）/ `TECHNICALJ.md`（技術）/ `the-touch-classifier.md`（記事・実測値反映）
