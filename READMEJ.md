@@ -1,8 +1,7 @@
 # READMEJ — インストール & 実行手順
 
 `twin-classifier-demo` を `git clone` した状態から、双子判定デモを動かすまでの手順。
-技術的な設計の解説は [`TECHNICALJ.md`](./TECHNICALJ.md)、読み物（Qiita記事）は
-[`the-touch-classifier.md`](./the-touch-classifier.md) を参照。
+技術的な設計の解説は [`TECHNICALJ.md`](./TECHNICALJ.md) を参照。
 
 > **権利・プライバシー**: 本リポジトリは実在人物の画像も学習済み重みも同梱しない。
 > 既定の検証は権利クリアな素材（合成画像）で行う。実写双子（例: ザ・たっち）に
