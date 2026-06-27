@@ -1,8 +1,7 @@
 # TECHNICALJ — 技術解説
 
 `twin-classifier-demo` の設計判断・実装の勘所・実測知見をまとめる。
-セットアップ手順は [`READMEJ.md`](./READMEJ.md)、読み物は
-[`the-touch-classifier.md`](./the-touch-classifier.md)。
+セットアップ手順は [`READMEJ.md`](./READMEJ.md)。
 
 ---
 

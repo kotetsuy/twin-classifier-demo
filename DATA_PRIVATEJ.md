@@ -15,7 +15,7 @@
 | 実在人物の画像 | `data/raw/`, `data/the_touch/`, `data/train|val/` | 肖像・プライバシー・著作権 |
 | 学習済み重み | `results/cnn.pt`, `results/cnn_thetouch.pt`, `*.pt/*.pth/*.onnx/*.safetensors` | 学習データの間接的な含有 |
 | モデルバイナリ | `.models/`, `*.task`（初回 DL 取得物）| 再取得可能・サイズ大 |
-| 私的な原稿・メモ | `the-touch-classifier.md`, `HANDOFF.md`, 作業ログ | 公開前提でない素材を含む |
+| 私的な原稿・メモ | `HANDOFF.md`, 作業ログ | 公開前提でない素材を含む |
 
 → **公開するのはコード・設計・集計値（精度・混同行列の数値）のみ**。画像やラベル本体は出さない。
 
@@ -35,7 +35,6 @@ results/*.png
 results/*.jpg
 .models/
 *.task
-the-touch-classifier.md
 HANDOFF.md
 .claude/
 ```
